@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Haïku Météo Dynamique</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      padding: 20px;
+      background-color: #f0f0f0;
+    }
+    h1 {
+      color: #333;
+    }
+    .haiku {
+      font-style: italic;
+      margin-top: 20px;
+      font-size: 1.5em;
+      color: #555;
+    }
+    select, button {
+      padding: 10px;
+      font-size: 1em;
+    }
+  </style>
+</head>
+<body>
+  <h1>Générer un Haïku Météo</h1>
+  
+  <label for="city">Choisissez une ville :</label>
+  <select id="city">
+    <option value="Nantes">Nantes</option>
+    <option value="Paris">Paris</option>
+    <option value="Marseille">Marseille</option>
+    <option value="Lyon">Lyon</option>
+    <option value="Toulouse">Toulouse</option>
+  </select>
+  
+  <br><br>
+  <button onclick="generateHaiku()">Générer un Haïku</button>
+
+  <p class="haiku" id="haiku"></p>
+
+  <script>
+    // Clé API pour OpenWeatherMap et OpenAI
+    const apiKeyWeather = 'e6cf12bfdd202adb65525aeb93d4d366';
+    const apiKeyGPT = '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';
+
+    // Fonction pour générer un haïku avec l'API de ChatGPT
+    async function generateHaiku() {
+      const city = document.getElementById('city').value;
+      const weatherUrl = `https://api.openweathermap.org/data/2.5/forecast?q=${city}&units=metric&appid=${apiKeyWeather}&lang=fr`;
+
+      try {
+        // Requête à l'API OpenWeatherMap pour obtenir la météo de la ville
+        const weatherResponse = await fetch(weatherUrl);
+        const weatherData = await weatherResponse.json();
+        const weatherDescription = weatherData.list[8].weather[0].description;
+        const temperature = weatherData.list[8].main.temp;
+
+        // Construction du prompt pour ChatGPT en fonction de la météo
+        const prompt = `Compose un haïku en français basé sur la météo suivante: "${weatherDescription}", avec une température de ${temperature}°C.`;
+
+        // Requête à l'API OpenAI pour générer un haïku
+        const gptResponse = await fetch('https://api.openai.com/v1/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${apiKeyGPT}`
+          },
+          body: JSON.stringify({
+            model: "text-davinci-004",
+            prompt: prompt,
+            max_tokens: 60,
+            temperature: 0.7
+          })
+        });
+
+        const gptData = await gptResponse.json();
+        const haiku = gptData.choices[0].text.trim();
+
+        // Afficher le haïku sur la page
+        document.getElementById('haiku').textContent = haiku;
+
+      } catch (error) {
+        console.error('Erreur lors de la génération du haïku:', error);
+        document.getElementById('haiku').textContent = 'Erreur lors de la génération du haïku.';
+      }
+    }
+  </script>
+</body>
+</html>
